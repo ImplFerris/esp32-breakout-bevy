@@ -31,7 +31,8 @@ esp-println = { version = "0.13.0", features = ["defmt-espflash", "esp32"] }
 
 
 # Disable default features for Bevy and its sub-crates so that no_std is used.
-bevy = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", default-features = false }
+bevy = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", default-features = false, features = [
+] }
 bevy_ecs = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", default-features = false }
 bevy_transform = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", default-features = false }
 bevy_math = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", default-features = false, features = [
@@ -39,6 +40,8 @@ bevy_math = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", d
   "libm",
 ] }
 # bevy_input = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", default-features = false }
+# bevy_state = { git = "https://github.com/bevyengine/bevy.git", rev = "301f618", default-features = false }
+
 
 embedded-graphics = "0.8.1"
 ssd1306 = { version = "0.10.0", features = [

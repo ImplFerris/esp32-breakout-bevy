@@ -13,16 +13,7 @@ pub struct Block {
     pub lives: u8,
 }
 
-pub struct BlockPlugin;
-
-impl Plugin for BlockPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_blocks)
-            .add_systems(Update, remove_blocks);
-    }
-}
-
-fn spawn_blocks(mut commands: Commands, display_resolution: NonSendMut<DisplayResolution>) {
+pub fn spawn_blocks(mut commands: Commands, display_resolution: NonSendMut<DisplayResolution>) {
     let total_width =
         BLOCK_COLUMNS as i32 * (BLOCK_SIZE.width as i32 + BLOCK_PADDING) - BLOCK_PADDING;
     let start_x = (display_resolution.width as i32 - total_width) / 2;
@@ -38,7 +29,7 @@ fn spawn_blocks(mut commands: Commands, display_resolution: NonSendMut<DisplayRe
     }
 }
 
-fn remove_blocks(mut commands: Commands, balls: Query<(Entity, &mut Block), With<Block>>) {
+pub fn remove_blocks(mut commands: Commands, balls: Query<(Entity, &mut Block), With<Block>>) {
     for (entity, block) in balls.iter() {
         if block.lives == 0 {
             commands.entity(entity).despawn();

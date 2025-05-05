@@ -8,6 +8,7 @@ use bevy::platform_support::{sync::atomic::AtomicU64, time::Instant as BevyInsta
 use bevy::DefaultPlugins;
 use esp32_breakout_bevy::game::resources::RandResource;
 use esp_hal::analog::adc::{Adc, AdcConfig};
+use esp_hal::gpio::{Input, InputConfig, Pull};
 use esp_hal::main;
 use esp_hal::rng::Rng;
 use esp_hal::time::Rate;
@@ -65,6 +66,10 @@ fn main() -> ! {
 
     let vrx_pin = adc2_config.enable_pin(peripherals.GPIO13, Attenuation::_11dB);
     let vry_pin = adc2_config.enable_pin(peripherals.GPIO14, Attenuation::_11dB);
+    let input_btn = Input::new(
+        peripherals.GPIO32,
+        InputConfig::default().with_pull(Pull::Up),
+    );
 
     let adc = Adc::new(peripherals.ADC2, adc2_config);
 
@@ -78,7 +83,7 @@ fn main() -> ! {
         .insert_non_send_resource(JoyStickResource {
             vrx_pin,
             vry_pin,
-            btn: peripherals.GPIO32,
+            btn: input_btn,
         })
         .insert_non_send_resource(AdcResource { adc })
         .insert_non_send_resource(RandResource {

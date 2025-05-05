@@ -1,8 +1,9 @@
 use bevy_ecs::resource::Resource;
 use embedded_graphics::image::ImageRaw;
 use embedded_graphics::pixelcolor::BinaryColor;
+use esp_hal::gpio::Input;
 use esp_hal::i2c::master::I2c;
-use esp_hal::{gpio::GpioPin, rng::Rng};
+use esp_hal::rng::Rng;
 use ssd1306::{
     mode::BufferedGraphicsMode, prelude::I2CInterface, size::DisplaySize128x64, Ssd1306,
 };
@@ -26,10 +27,10 @@ type VrxPin = esp_hal::analog::adc::AdcPin<esp_hal::gpio::GpioPin<13>, esp_hal::
 type VryPin = esp_hal::analog::adc::AdcPin<esp_hal::gpio::GpioPin<14>, esp_hal::peripherals::ADC2>;
 
 #[derive(Resource)]
-pub struct JoyStickResource {
+pub struct JoyStickResource<'a> {
     pub vrx_pin: VrxPin,
     pub vry_pin: VryPin,
-    pub btn: GpioPin<BTN_PIN>,
+    pub btn: Input<'a>,
 }
 
 pub type Adc<'a> = esp_hal::analog::adc::Adc<'a, esp_hal::peripherals::ADC2, esp_hal::Blocking>;
@@ -55,17 +56,18 @@ pub struct RandResource {
     pub rng: Rng,
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Debug)]
 pub enum GameState {
     #[default]
-    Menu,
+    MainMenu,
     Playing,
     LevelCompleted,
-    Dead,
+    GameOver,
 }
 
 #[derive(Resource, Default)]
 pub struct GameStatus {
     pub state: GameState,
     pub score: u32,
+    pub reset_game: bool,
 }

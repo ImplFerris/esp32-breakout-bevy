@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use defmt::info;
 use embedded_graphics::{
     prelude::{Point, Size},
     primitives::Rectangle,
@@ -15,24 +14,21 @@ use super::{
 pub const BALL_SIZE: Size = Size::new(4, 4);
 pub const BALL_SPEED: i32 = 1;
 
-pub struct ProjectilePlugin;
-
-impl Plugin for ProjectilePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_ball)
-            .add_systems(Update, (update_ball, collison_handle, remove_balls));
-    }
-}
-
 #[derive(Component)]
 #[require(Velocity)]
 pub struct Ball;
 
-fn spawn_ball(
+pub fn spawn_ball(
+    balls: Query<(&mut Position, &mut Velocity), With<Ball>>,
     mut commands: Commands,
     display_resolution: NonSendMut<DisplayResolution>,
     mut rand_res: NonSendMut<RandResource>,
 ) {
+    if !balls.is_empty() {
+        // Spawn ball only if it is empty
+        return;
+    }
+
     let rng = &mut rand_res.rng;
     let rand_velocity_x = ((rng.random() as i32 % 21) - 10).clamp(-1, 1);
 
@@ -49,7 +45,7 @@ fn spawn_ball(
     ));
 }
 
-fn update_ball(
+pub fn update_ball(
     balls: Query<(&mut Position, &mut Velocity), With<Ball>>,
     display_resolution: NonSendMut<DisplayResolution>,
 ) {
@@ -70,11 +66,11 @@ fn update_ball(
 }
 
 #[allow(clippy::type_complexity)]
-fn collison_handle(
+pub fn collison_handle(
     balls: Query<(&mut Position, &mut Velocity), With<Ball>>,
     mut blocks: Query<(&mut Block, &mut Position), (With<Block>, Without<Ball>, Without<Player>)>,
     mut player: Query<&mut Position, (With<Player>, Without<Ball>, Without<Block>)>,
-    mut game_status: NonSendMut<GameStatus>,
+    mut game_status: ResMut<GameStatus>,
 ) {
     let Ok(player_pos) = player.single_mut() else {
         return;
@@ -94,7 +90,6 @@ fn collison_handle(
             if resolve_collison(&mut ball_rect, &mut ball_velocity, &block_rect) {
                 ball_position.0 = ball_rect.top_left;
                 block.lives = block.lives.saturating_sub(1);
-                info!("Block hit, block lives: {}", block.lives);
                 if block.lives == 0 {
                     game_status.score += 10;
                 }
@@ -103,7 +98,7 @@ fn collison_handle(
     }
 }
 
-fn remove_balls(
+pub fn remove_balls(
     mut commands: Commands,
     balls: Query<(Entity, &mut Position), With<Ball>>,
     mut player: Query<&mut Player, With<Player>>,
@@ -125,35 +120,8 @@ fn remove_balls(
         player.lives = player.lives.saturating_sub(1);
     }
 }
-// let remove_balls = balls_len - self.balls.len();
-// if remove_balls > 0 && self.balls.is_empty() {
-//     self.player.lives = self.player.lives.saturating_sub(1);
 
-//     let screen_dims = self.display.dimensions();
-//     let screen_width = screen_dims.0 as i32;
-//     let screen_height = screen_dims.1 as i32;
-
-//     // Spawn ball just above the player and center of the player
-//     let player_half = PLAYER_SIZE.width / 2;
-//     let ball_pos = self.player.rect.top_left
-//         + Point::new(
-//             player_half as i32,
-//             self.player.rect.top_left.y - screen_height,
-//         );
-
-//     self.balls
-//         .push(Ball::new(ball_pos, &mut self.rng, screen_width))
-//         .map_err(|_| "Failed to add Ball")
-//         .unwrap();
-//     if self.player.lives == 0 {
-//         self.state = GameState::Dead;
-//         // Clear any accident click during the game play
-//         RESET_GAME.store(false, Ordering::Relaxed);
-//     }
-// }
-// }
-
-pub fn resolve_collison(a: &mut Rectangle, vel: &mut Velocity, b: &Rectangle) -> bool {
+fn resolve_collison(a: &mut Rectangle, vel: &mut Velocity, b: &Rectangle) -> bool {
     let intersection = a.intersection(b);
 
     if intersection.size.width == 0 || intersection.size.height == 0 {

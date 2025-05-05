@@ -2,7 +2,10 @@ use bevy::prelude::*;
 use core::fmt::Write;
 use embedded_graphics::{
     image::Image,
-    mono_font::{ascii::FONT_5X8, MonoTextStyleBuilder},
+    mono_font::{
+        ascii::{FONT_5X8, FONT_6X10},
+        MonoTextStyleBuilder,
+    },
     pixelcolor::BinaryColor,
     prelude::*,
     primitives::{PrimitiveStyleBuilder, Rectangle},
@@ -20,18 +23,7 @@ use super::{
     Position,
 };
 
-pub struct RenderPlugin;
-
-impl Plugin for RenderPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (clear_screen, print_score, print_lives, render_display),
-        );
-    }
-}
-
-fn clear_screen(mut display_res: NonSendMut<DisplayResource>) {
+pub fn clear_screen(mut display_res: NonSendMut<DisplayResource>) {
     let display = &mut display_res.display;
 
     display.clear_buffer();
@@ -40,7 +32,7 @@ fn clear_screen(mut display_res: NonSendMut<DisplayResource>) {
         .expect("failed to clear display");
 }
 
-fn render_display(
+pub fn render_game(
     mut display_res: NonSendMut<DisplayResource>,
     blocks: Query<&Position, With<Block>>,
     player: Query<&Position, With<Player>>,
@@ -81,7 +73,7 @@ fn render_display(
     display.flush().expect("failed to flush");
 }
 
-fn print_score(mut display_res: NonSendMut<DisplayResource>, game_status: NonSendMut<GameStatus>) {
+pub fn print_score(mut display_res: NonSendMut<DisplayResource>, game_status: ResMut<GameStatus>) {
     let display = &mut display_res.display;
 
     let mut score_text: String<16> = String::new();
@@ -97,7 +89,7 @@ fn print_score(mut display_res: NonSendMut<DisplayResource>, game_status: NonSen
         .unwrap();
 }
 
-fn print_lives(
+pub fn print_lives(
     display_resolution: NonSendMut<DisplayResolution>,
     mut player: Query<&mut Player, With<Player>>,
     mut display_res: NonSendMut<DisplayResource>,
@@ -110,7 +102,6 @@ fn print_lives(
 
     let img_width = HEART_SPRITE_WIDTH;
     let lives_x = (display_resolution.width - img_width * player.lives as u32) - img_width;
-
     for i in 0..player.lives {
         let x = lives_x + i as u32 * img_width;
 
@@ -119,34 +110,28 @@ fn print_lives(
     }
 }
 
-// fn display_welcome(mut display_res: NonSendMut<DisplayResource>) {
-//     info!("Displaying Welcome");
-//     let display = &mut display_res.display;
+pub fn display_welcome(mut display_res: NonSendMut<DisplayResource>) {
+    let display = &mut display_res.display;
 
-//     display.clear_buffer();
-//     display
-//         .clear(BinaryColor::Off)
-//         .expect("failed to clear display");
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X10)
+        .text_color(BinaryColor::On)
+        .build();
 
-//     let text_style = MonoTextStyleBuilder::new()
-//         .font(&FONT_6X10)
-//         .text_color(BinaryColor::On)
-//         .build();
+    let title = "Mom... I'm Game dev now";
+    let text_width = title.len() as i32 * FONT_6X10.character_size.width as i32;
+    let text_height = FONT_6X10.character_size.height as i32;
 
-//     let title = "Mom... I'm Game dev now";
-//     let text_width = title.len() as i32 * FONT_6X10.character_size.width as i32;
-//     let text_height = FONT_6X10.character_size.height as i32;
+    // Get display dimensions
+    let (width, height) = display.dimensions();
 
-//     // Get display dimensions
-//     let (width, height) = display.dimensions();
+    // Calculate top-left position to center the text
+    let x = (width as i32 - text_width) / 2;
+    let y = (height as i32 - text_height) / 2;
 
-//     // Calculate top-left position to center the text
-//     let x = (width as i32 - text_width) / 2;
-//     let y = (height as i32 - text_height) / 2;
+    Text::with_baseline(title, Point::new(x, y), text_style, Baseline::Top)
+        .draw(display)
+        .expect("failed to draw welcome text");
 
-//     Text::with_baseline(title, Point::new(x, y), text_style, Baseline::Top)
-//         .draw(display)
-//         .expect("failed to draw welcome text");
-
-//     display.flush().expect("failed to flush display");
-// }
+    display.flush().expect("failed to flush display");
+}

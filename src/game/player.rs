@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use embedded_graphics::prelude::{Point, Size};
 
 use super::{
-    resources::{AdcResource, DisplayResolution, JoyStickResource},
+    resources::{AdcResource, DisplayResolution, GameStatus, JoyStickResource},
     Position,
 };
 
@@ -10,22 +10,13 @@ pub const PLAYER_SPEED: i32 = 5;
 pub const PLAYER_SIZE: Size = Size::new(40, 5);
 const PLAYER_LIVES: u8 = 3;
 
-pub struct PlayerPlugin;
-
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut bevy::app::App) {
-        app.add_systems(Startup, spawn_player)
-            .add_systems(Update, update_player);
-    }
-}
-
 #[derive(Component)]
 #[require(Position)]
 pub struct Player {
     pub lives: u8,
 }
 
-fn spawn_player(mut commands: Commands, display_resolution: NonSendMut<DisplayResolution>) {
+pub fn spawn_player(mut commands: Commands, display_resolution: NonSendMut<DisplayResolution>) {
     commands.spawn((
         Player {
             lives: PLAYER_LIVES,
@@ -37,7 +28,7 @@ fn spawn_player(mut commands: Commands, display_resolution: NonSendMut<DisplayRe
     ));
 }
 
-fn update_player(
+pub fn joystick_input(
     mut joystick: NonSendMut<JoyStickResource>,
     mut adc_res: NonSendMut<AdcResource>,
     mut player: Query<&mut Position, With<Player>>,
@@ -59,5 +50,11 @@ fn update_player(
         // info!("Moving right");
         let right_edge = display_resolution.width as i32 - PLAYER_SIZE.width as i32;
         position.0.x = (position.0.x + PLAYER_SPEED).min(right_edge);
+    }
+}
+
+pub fn reset_input(mut game_status: ResMut<GameStatus>, joystick: NonSendMut<JoyStickResource>) {
+    if joystick.btn.is_low() {
+        game_status.reset_game = true;
     }
 }
