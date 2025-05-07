@@ -23,10 +23,8 @@ pub fn joystick(
     };
 
     if adc_value > 3000 {
-        // info!("Moving left");
         position.0.x = (position.0.x - PLAYER_SPEED).max(0);
     } else if adc_value < 1500 {
-        // info!("Moving right");
         let right_edge = display_resolution.width as i32 - PLAYER_SIZE.width as i32;
         position.0.x = (position.0.x + PLAYER_SPEED).min(right_edge);
     }

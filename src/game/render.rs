@@ -19,6 +19,7 @@ use super::{
     player::{Player, PLAYER_SIZE},
     resources::{
         DisplayResolution, DisplayResource, GameStatus, HEART_SPRITE_WIDTH, RAW_HEART_SPRITE,
+        RAW_SPRITE_BEVY, SPRITE_BEVY_SIZE,
     },
     Position,
 };
@@ -168,24 +169,45 @@ pub fn display_game_completed(
     display.flush().expect("failed to flush display");
 }
 
-pub fn display_welcome(mut display_res: NonSendMut<DisplayResource>) {
+pub fn display_welcome(
+    mut display_res: NonSendMut<DisplayResource>,
+    display_resolution: NonSendMut<DisplayResolution>,
+) {
     let display = &mut display_res.display;
 
+    let text_size = FONT_5X8;
+    let text_height = text_size.character_size.height;
+
+    let img_x = (display_resolution.width - SPRITE_BEVY_SIZE.width) / 2;
+    // let img_y = (display_resolution.height - (SPRITE_BEVY_SIZE.height + text_height * 2)) / 2;
+    let img_y = 0;
+    let image = Image::new(&RAW_SPRITE_BEVY, Point::new(img_x as i32, img_y as i32));
+    image.draw(display).unwrap();
+
     let text_style = MonoTextStyleBuilder::new()
-        .font(&FONT_6X10)
+        .font(&text_size)
         .text_color(BinaryColor::On)
         .build();
 
-    let title = "Mom... I'm Game dev now";
-    let text_width = title.len() as i32 * FONT_6X10.character_size.width as i32;
-    let text_height = FONT_6X10.character_size.height as i32;
+    let title = "B . E . V . Y... BEVY";
+    let text_width = title.len() as i32 * text_size.character_size.width as i32;
 
-    // Get display dimensions
-    let (width, height) = display.dimensions();
+    let text_height = text_height as i32;
 
     // Calculate top-left position to center the text
-    let x = (width as i32 - text_width) / 2;
-    let y = (height as i32 - text_height) / 2;
+    let x = (display_resolution.width as i32 - text_width) / 2;
+    let y = (img_y + SPRITE_BEVY_SIZE.height) as i32;
+
+    Text::with_baseline(title, Point::new(x, y), text_style, Baseline::Top)
+        .draw(display)
+        .expect("failed to draw welcome text");
+
+    let title = "Rusting Everything...";
+    let text_width = title.len() as i32 * text_size.character_size.width as i32;
+
+    // Calculate top-left position to center the text
+    let x = (display_resolution.width as i32 - text_width) / 2;
+    let y = y + text_height + 2;
 
     Text::with_baseline(title, Point::new(x, y), text_style, Baseline::Top)
         .draw(display)
