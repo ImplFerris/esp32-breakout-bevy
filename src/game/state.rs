@@ -1,10 +1,14 @@
 use bevy::prelude::*;
 
 use super::{
+    ball::Ball,
     block::Block,
     player::Player,
     resources::{GameState, GameStatus},
 };
+
+#[derive(Debug, Event)]
+pub struct ResetGameEvent;
 
 pub fn update_game_state(
     player: Query<&Player, (With<Player>,)>,
@@ -23,11 +27,34 @@ pub fn update_game_state(
     }
 }
 
-pub fn handle_game_reset(mut game_status: ResMut<GameStatus>) {
-    if !game_status.reset_game {
+pub fn reset_game(
+    mut commands: Commands,
+    mut events: EventReader<ResetGameEvent>,
+    ball_query: Query<Entity, With<Ball>>,
+    block_query: Query<Entity, With<Block>>,
+    player_query: Query<Entity, With<Player>>,
+    mut game_status: ResMut<GameStatus>,
+) {
+    let Some(_) = events.read().next() else {
         return;
-    }
+    };
 
-    game_status.reset_game = false;
+    // Despawn all existing game entities
+    ball_query
+        .iter()
+        .for_each(|entity| commands.entity(entity).despawn());
+    block_query
+        .iter()
+        .for_each(|entity| commands.entity(entity).despawn());
+    player_query
+        .iter()
+        .for_each(|entity| commands.entity(entity).despawn());
+
+    game_status.state = GameState::Resetting;
+    game_status.score = 0;
+}
+
+/// switch to playing mode
+pub fn switch_reset(mut game_status: ResMut<GameStatus>) {
     game_status.state = GameState::Playing;
 }

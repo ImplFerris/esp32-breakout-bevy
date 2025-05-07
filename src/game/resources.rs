@@ -63,11 +63,11 @@ pub enum GameState {
     Playing,
     LevelCompleted,
     GameOver,
+    Resetting,
 }
 
 #[derive(Resource, Default)]
 pub struct GameStatus {
     pub state: GameState,
     pub score: u32,
-    pub reset_game: bool,
 }

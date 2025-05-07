@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 use embedded_graphics::prelude::{Point, Size};
 
-use super::{
-    resources::{AdcResource, DisplayResolution, GameStatus, JoyStickResource},
-    Position,
-};
+use super::{resources::DisplayResolution, state::ResetGameEvent, Position};
 
 pub const PLAYER_SPEED: i32 = 5;
 pub const PLAYER_SIZE: Size = Size::new(40, 5);
@@ -16,7 +13,15 @@ pub struct Player {
     pub lives: u8,
 }
 
-pub fn spawn_player(mut commands: Commands, display_resolution: NonSendMut<DisplayResolution>) {
+pub fn spawn_player(
+    mut commands: Commands,
+    display_resolution: NonSendMut<DisplayResolution>,
+    mut events: EventReader<ResetGameEvent>,
+) {
+    let Some(_) = events.read().next() else {
+        return;
+    };
+
     commands.spawn((
         Player {
             lives: PLAYER_LIVES,
@@ -26,35 +31,4 @@ pub fn spawn_player(mut commands: Commands, display_resolution: NonSendMut<Displ
             (display_resolution.height - PLAYER_SIZE.height) as i32,
         )),
     ));
-}
-
-pub fn joystick_input(
-    mut joystick: NonSendMut<JoyStickResource>,
-    mut adc_res: NonSendMut<AdcResource>,
-    mut player: Query<&mut Position, With<Player>>,
-    display_resolution: NonSendMut<DisplayResolution>,
-) {
-    let Ok(mut position) = player.single_mut() else {
-        return;
-    };
-
-    let Ok(adc_value): Result<u16, _> = nb::block!(adc_res.adc.read_oneshot(&mut joystick.vry_pin))
-    else {
-        return;
-    };
-
-    if adc_value > 3000 {
-        // info!("Moving left");
-        position.0.x = (position.0.x - PLAYER_SPEED).max(0);
-    } else if adc_value < 1500 {
-        // info!("Moving right");
-        let right_edge = display_resolution.width as i32 - PLAYER_SIZE.width as i32;
-        position.0.x = (position.0.x + PLAYER_SPEED).min(right_edge);
-    }
-}
-
-pub fn reset_input(mut game_status: ResMut<GameStatus>, joystick: NonSendMut<JoyStickResource>) {
-    if joystick.btn.is_low() {
-        game_status.reset_game = true;
-    }
 }

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use embedded_graphics::prelude::{Point, Size};
 
-use super::{resources::DisplayResolution, Position};
+use super::{resources::DisplayResolution, state::ResetGameEvent, Position};
 
 const BLOCK_COLUMNS: usize = 6;
 const BLOCK_ROWS: usize = 5;
@@ -13,7 +13,15 @@ pub struct Block {
     pub lives: u8,
 }
 
-pub fn spawn_blocks(mut commands: Commands, display_resolution: NonSendMut<DisplayResolution>) {
+pub fn spawn_blocks(
+    mut commands: Commands,
+    display_resolution: NonSendMut<DisplayResolution>,
+    mut events: EventReader<ResetGameEvent>,
+) {
+    let Some(_) = events.read().next() else {
+        return;
+    };
+
     let total_width =
         BLOCK_COLUMNS as i32 * (BLOCK_SIZE.width as i32 + BLOCK_PADDING) - BLOCK_PADDING;
     let start_x = (display_resolution.width as i32 - total_width) / 2;

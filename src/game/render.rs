@@ -110,6 +110,64 @@ pub fn print_lives(
     }
 }
 
+pub fn display_game_over(
+    mut display_res: NonSendMut<DisplayResource>,
+    game_status: ResMut<GameStatus>,
+) {
+    let mut title: String<20> = String::new();
+    write!(title, "You died! Score: {}", game_status.score).unwrap();
+
+    let display = &mut display_res.display;
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X10)
+        .text_color(BinaryColor::On)
+        .build();
+
+    let text_width = title.len() as i32 * FONT_6X10.character_size.width as i32;
+    let text_height = FONT_6X10.character_size.height as i32;
+
+    // Get display dimensions
+    let (width, height) = display.dimensions();
+
+    // Calculate top-left position to center the text
+    let x = (width as i32 - text_width) / 2;
+    let y = (height as i32 - text_height) / 2;
+
+    Text::with_baseline(&title, Point::new(x, y), text_style, Baseline::Top)
+        .draw(display)
+        .unwrap();
+    display.flush().expect("failed to flush display");
+}
+
+pub fn display_game_completed(
+    mut display_res: NonSendMut<DisplayResource>,
+    game_status: ResMut<GameStatus>,
+) {
+    let mut title: String<20> = String::new();
+    write!(title, "You win! Score: {}", game_status.score).unwrap();
+
+    let display = &mut display_res.display;
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X10)
+        .text_color(BinaryColor::On)
+        .build();
+
+    let text_width = title.len() as i32 * FONT_6X10.character_size.width as i32;
+    let text_height = FONT_6X10.character_size.height as i32;
+
+    // Get display dimensions
+    let (width, height) = display.dimensions();
+
+    // Calculate top-left position to center the text
+    let x = (width as i32 - text_width) / 2;
+    let y = (height as i32 - text_height) / 2;
+
+    Text::with_baseline(&title, Point::new(x, y), text_style, Baseline::Top)
+        .draw(display)
+        .unwrap();
+    display.flush().expect("failed to flush display");
+}
+
 pub fn display_welcome(mut display_res: NonSendMut<DisplayResource>) {
     let display = &mut display_res.display;
 

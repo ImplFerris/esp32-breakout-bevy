@@ -8,6 +8,7 @@ use super::{
     block::{Block, BLOCK_SIZE},
     player::{Player, PLAYER_SIZE},
     resources::{DisplayResolution, GameStatus, RandResource},
+    state::ResetGameEvent,
     Position, Velocity,
 };
 
@@ -18,17 +19,38 @@ pub const BALL_SPEED: i32 = 1;
 #[require(Velocity)]
 pub struct Ball;
 
-pub fn spawn_ball(
+pub fn spawn_ball_if_empty(
     balls: Query<(&mut Position, &mut Velocity), With<Ball>>,
-    mut commands: Commands,
+    commands: Commands,
     display_resolution: NonSendMut<DisplayResolution>,
-    mut rand_res: NonSendMut<RandResource>,
+    rand_res: NonSendMut<RandResource>,
 ) {
     if !balls.is_empty() {
         // Spawn ball only if it is empty
         return;
     }
 
+    spawn_ball(commands, display_resolution, rand_res);
+}
+
+pub fn spawn_ball_on_reset(
+    commands: Commands,
+    display_resolution: NonSendMut<DisplayResolution>,
+    rand_res: NonSendMut<RandResource>,
+    mut event_reader: EventReader<ResetGameEvent>,
+) {
+    let Some(_) = event_reader.read().next() else {
+        return;
+    };
+
+    spawn_ball(commands, display_resolution, rand_res);
+}
+
+pub fn spawn_ball(
+    mut commands: Commands,
+    display_resolution: NonSendMut<DisplayResolution>,
+    mut rand_res: NonSendMut<RandResource>,
+) {
     let rng = &mut rand_res.rng;
     let rand_velocity_x = ((rng.random() as i32 % 21) - 10).clamp(-1, 1);
 

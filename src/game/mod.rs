@@ -1,5 +1,6 @@
 mod ball;
 mod block;
+mod input;
 mod player;
 mod render;
 pub mod resources;
@@ -23,17 +24,17 @@ pub struct Velocity {
 pub struct Position(pub Point);
 
 pub fn start_game(mut app: App) -> ! {
-    app.insert_resource(Time::<Fixed>::from_hz(10.0))
-        .insert_resource(GameStatus::default())
-        .add_systems(Startup, (block::spawn_blocks, player::spawn_player))
+    app.insert_resource(GameStatus::default())
+        .add_event::<state::ResetGameEvent>()
         .add_systems(
             Update,
             (
-                (player::joystick_input, player::reset_input).chain(),
+                // Handle input
+                (input::joystick, input::reset_btn).chain(),
+                // Playing
                 (
-                    ball::spawn_ball,
+                    ball::spawn_ball_if_empty,
                     ball::update_ball,
-                    ball::collison_handle,
                     ball::collison_handle,
                     ball::remove_balls,
                     block::remove_blocks,
@@ -41,8 +42,19 @@ pub fn start_game(mut app: App) -> ! {
                 )
                     .run_if(run_if_playing)
                     .chain()
-                    .after(player::reset_input),
-                state::handle_game_reset,
+                    .after(input::reset_btn),
+                // Reset the game and spawn
+                state::reset_game,
+                (
+                    ball::spawn_ball_on_reset,
+                    block::spawn_blocks,
+                    player::spawn_player,
+                    state::switch_reset,
+                )
+                    .chain()
+                    .run_if(run_if_resetting),
+                // .after(state::reset_game),
+                // Rendering
                 render::clear_screen,
                 (
                     render::print_lives,
@@ -55,9 +67,10 @@ pub fn start_game(mut app: App) -> ! {
                 render::display_welcome
                     .run_if(run_if_main_menu)
                     .after(render::clear_screen),
+                render::display_game_over.run_if(run_if_game_over),
+                render::display_game_completed.run_if(run_if_completed),
             ),
         );
-    // app.add_plugins((PlayerPlugin, BlockPlugin, ProjectilePlugin, RenderPlugin));
     info!("running app");
     app.run();
     loop {
@@ -73,4 +86,16 @@ fn run_if_playing(game_status: Res<GameStatus>) -> bool {
 
 fn run_if_main_menu(game_status: Res<GameStatus>) -> bool {
     game_status.state == GameState::MainMenu
+}
+
+fn run_if_game_over(game_status: Res<GameStatus>) -> bool {
+    game_status.state == GameState::GameOver
+}
+
+fn run_if_completed(game_status: Res<GameStatus>) -> bool {
+    game_status.state == GameState::LevelCompleted
+}
+
+fn run_if_resetting(game_status: Res<GameStatus>) -> bool {
+    game_status.state == GameState::Resetting
 }
